@@ -21,9 +21,9 @@ my $script = <<'EOF';
 use strict;
 
 
-require Getopt::Long;
-require SNMP::Monitor;
-require Time::Local;
+use Getopt::Long ();
+use SNMP::Monitor ();
+use Time::Local ();
 
 
 ############################################################################
@@ -32,7 +32,8 @@ require Time::Local;
 #
 ############################################################################
 
-my $VERSION = 'snmpmonRep, 29-Oct-1998, Copyright (C) 1998 by Jochen Wiedmann';
+my $VERSION
+   = 'snmpmonRep, 26-Apr-1999, Copyright (C) 1998-99 by Jochen Wiedmann';
 my $ETC_DIR = "~etc_dir~";
 my $CONFIG_FILE = "$ETC_DIR/configuration";
 my $MAIL_COMMAND = "/usr/ucb/mail -s \$subject \$recipient";
@@ -47,8 +48,6 @@ my $MAIL_COMMAND = "/usr/ucb/mail -s \$subject \$recipient";
 use vars qw($debugging $verbose);
 
 $debugging = 0;
-
-my $configFile = $CONFIG_FILE;
 
 
 ############################################################################
@@ -65,16 +64,22 @@ Usage: $0 [options]
 
 Possible options are:
 
-    --from <dd.mm.yyyy> Start report at the given date, defaults to the
-			first day of the previous month.
-    --to <dd.mm.yyyy>   Stop report at the given date, defaults to the
-			first day of the current month.
-    --help		Show this message.
-    --version		Print version number and exit.
     --config <file>     Read configuration from <file>, defaults to
                         $CONFIG_FILE.
+    --daily             By default only a sum is printed. This option
+			causes daily numbers being printed.
     --debug             Run in debugging mode; don't do anything, just
 			show what would be done.
+    --help		Show this message.
+    --from <dd.mm.yyyy> Start report at the given date, defaults to the
+			first day of the previous month.
+    --scale <bytes>     Make output scaled by <bytes>. This is required,
+		        if your counters exceed Perl's or MySQL's integer
+			limits, typically around 2 GB. Examples:
+		        --scale=1000 or --scale=1024
+    --to <dd.mm.yyyy>   Stop report at the given date, defaults to the
+			first day of the current month.
+    --version		Print version number and exit.
     --verbose           Run in verbose mode.
 
 $VERSION
@@ -97,8 +102,11 @@ USAGE
 
 sub GetTime ($) {
     my $str = shift;
-    if ($str !~ /^(\d\d)\.(\d\d)\.(\d\d\d\d)$/) {
-	die "Cannot parse date string $str";
+    if ($str =~ /^(\d\d\d\d)[-\.](\d\d)[-\.](\d\d)$/) {
+	return Time::Local::timelocal(0, 0, 0, $3, $2-1, $1-1900);
+    }
+    if ($str !~ /^(\d\d)[-\.](\d\d)[-\.](\d\d\d\d)$/) {
+	die "Cannot parse date string $str; use dd.mm.yyyy or yyyy-mm-dd";
     }
     Time::Local::timelocal(0, 0, 0, $1, $2-1, $3-1900);
 }
@@ -125,11 +133,18 @@ sub _FromUnixTime {
 	    $year+1900, $mon+1, $mday, $hour, $min, $sec);
 }
 
-sub ReportInterface ($$$$$) {
-    my($dbh, $host, $interface, $from, $to) = @_;
+sub ReportInterface ($$$$$$) {
+    my($o, $dbh, $host, $interface, $from, $to) = @_;
 
-    my $query = sprintf("SELECT SUM(INOCTETS), SUM(OUTOCTETS),"
-			. " AVG(OPERSTATUS=1) FROM SNMPMON_IFLOAD WHERE"
+    my $inSum = $o->{'scale'} ?
+         "ROUND(SUM(INOCTETS/$o->{'scale'}.0))" : "SUM(INOCTETS)";
+    my $outSum = $o->{'scale'} ?
+	 "ROUND(SUM(OUTOCTETS/$o->{'scale'}.0))" : "SUM(OUTOCTETS)";
+
+    my $query = sprintf("SELECT $inSum AS INSUM, $outSum AS OUTSUM,"
+			. " $inSum+$outSum AS SUM,"
+			. " AVG(OPERSTATUS=1)*100 AS AVGSUM"
+			. " FROM SNMPMON_IFLOAD WHERE"
 			. " INTERVAL_END >= %s AND INTERVAL_END < %s "
 			. " AND INTERFACE = %s AND HOST = %s",
 			$dbh->quote(_FromUnixTime($from)),
@@ -137,17 +152,17 @@ sub ReportInterface ($$$$$) {
 			$interface->{'num'},
 			$dbh->quote($host->{'name'}));
     if ($verbose) {
-	print "Interface query: $q\n";
+	print "Interface query: $query\n";
     }
-    my $sth = $dbh->prepare($q);
+    my $sth = $dbh->prepare($query);
     $sth->execute();
     my $ref = $sth->fetchrow_arrayref();
 
     my $ifInOctets = $ref ? $ref->[0] : 0;
     my $ifOutOctets = $ref ? $ref->[1] : 0;
-    my $sumOctets = $ifInOctets + $ifOutOctets;
-    my $avg = $ref ? $ref->[2] : 0;
-    { 'in' => $ifInOctets,
+    my $sumOctets = $ref ? $ref->[2] : 0;
+    my $avg = $ref ? $ref->[3] : 0;
+    my $result = { 'in' => $ifInOctets,
       'out' => $ifOutOctets,
       'sum' => $sumOctets,
       'avg' => $avg,
@@ -155,7 +170,33 @@ sub ReportInterface ($$$$$) {
       'description' => $interface->{'short_message'} ||
 	               $interface->{'description'},
       'interface' => $interface->{'num'}
+    };
+
+    if ($o->{'daily'}) {
+	$query = sprintf("SELECT $inSum AS INSUM, $outSum AS OUTSUM,"
+			 . " $inSum+$outSum AS SUM,"
+			 . " AVG(OPERSTATUS=1)*100 AS AVGSUM,"
+                         . " YEAR(INTERVALEND) AS Y,"
+			 . " MONTH(INTERVAL_END) AS M,"
+			 . " DAYOFMONTH(INTERVAL_END) AS D FROM"
+			 . " SNMPMON_IFLOAD WHERE"
+			 . " INTERVAL_END >= %s AND INTERVAL_END < %s "
+			 . " AND INTERFACE = %s AND HOST = %s"
+			 . " GROUP BY Y, M, D ORDER BY Y, M, D",
+			 $dbh->quote(_FromUnixTime($from)),
+			 $dbh->quote(_FromUnixTime($to)),
+			 $interface->{'num'},
+			 $dbh->quote($host->{'name'}));
+	my @days;
+	$sth = $dbh->prepare($query);
+	$sth->execute();
+	while (my $ref = $sth->fetchrow_hashref()) {
+	    push(@days, {%$ref});
+	}
+	$result->{'days'} = \@days;
     }
+
+    $result;
 }
 
 
@@ -165,15 +206,17 @@ sub ReportInterface ($$$$$) {
 #
 #   Purpose: Generate report
 #
-#   Inputs:  $configFile - Config file location
-#            $from, $to - Report times
+#   Inputs:  $o - Hash ref of options
+#            $from - From time
+#            $to - To time
 #
 #   Returns: Nothing, dies in case of trouble.
 #
 ############################################################################
 
 sub Report ($$$) {
-    my($configFile, $from, $to) = @_;
+    my($o, $from, $to) = @_;
+    my $configFile = $o->{'config'};
     my $config = SNMP::Monitor->Configuration($configFile);
     my $reports = {};
 
@@ -187,7 +230,8 @@ sub Report ($$$) {
 		    print("Reporting host ", $host->{'name'},
 			  "interface ", $interface->{'num'}, "\n");
 		}
-		my $r = ReportInterface($dbh, $host, $interface, $from, $to);
+		my $r = ReportInterface($o, $dbh, $host, $interface, $from,
+                                        $to);
 		foreach my $a (split(/,/, $addr)) {
 		    $a =~ s/^\s+//;
 		    $a =~ s/\s+$//;
@@ -215,20 +259,47 @@ sub Report ($$$) {
     $to_m += 1;
 
     while (my ($a, $list) = each %$reports) {
+	my($sInterface, $sIn, $sOut, $sSum, $sUp) =
+	    (length("Interface"), length("Bytes In"), length("Bytes Out"),
+	     length("Sum"), length("Uptime"));
+	foreach my $l (@$list) {
+	    $sInterface = length($l->{'description'})
+		if (length($l->{'description'}) > $sInterface);
+	    $sIn = length($l->{'in'}) if (length($l->{'in'}) > $sIn);
+	    $sOut = length($l->{'out'}) if (length($l->{'out'}) > $sOut);
+	    $sSum = length($l->{'out'} + $l->{'in'})
+		if (length($l->{'out'} + $l->{'in'}) > $sSum);
+	    $sUp = length($l->{'avg'}) if (length($l->{'avg'}) > $sUp);
+	}
+	my $format = sprintf("%%%ds %%%ds %%%ds %%%ds %%%d.2f",
+			     $sInterface, $sIn, $sOut, $sSum, $sUp);
+
 	my $msg = qq{
 
 Interfaceauslastung vom $from_d.$from_m.$from_y - $to_d.$to_m.$to_y:
 
 };
-	$msg .= sprintf("\n%20s %-12s %12s %13s %5s\n",
+	$msg .= sprintf("\n$format\n",
 			"Interface", "Bytes In", "Bytes Out", "Summe",
 			"Uptime");
 	$msg .= "\n";
 	foreach my $l (@$list) {
-	    $msg .= sprintf("%20s %12s %12s %13s %5.2f\n",
+	    $msg .= sprintf("$format\n",
 			    $l->{'description'},
 			    $l->{'in'}, $l->{'out'}, $l->{'sum'},
-			    $l->{'avg'}*100);
+			    $l->{'avg'});
+	    if ($l->{'days'}) {
+		foreach my $d (@{$l->{'days'}}) {
+		    $msg .= sprintf("$format\n",
+				    sprintf("%02d.%02d.%04d",
+				            $d->{'D'}, $d->{'M'},
+					    $d->{'Y'}),
+				    $d->{'INSUM'}, $d->{'OUTSUM'},
+				    $d->{'SUM'},
+				    $d->{'AVGSUM'});
+		}
+		$msg .= "\n";
+	    }
 	}
 
 	if ($verbose) {
@@ -256,27 +327,18 @@ Interfaceauslastung vom $from_d.$from_m.$from_y - $to_d.$to_m.$to_y:
 ############################################################################
 
 {
-    my $o = {};
-    &Getopt::Long::GetOptions($o, '--from=s', '--to=s', '--debug',
+    my $o = {
+        'config' => $CONFIG_FILE,
+        'debug' => \$debugging,
+        'help' => \&Usage,
+        'verbose' => \$verbose,
+        'version' => sub { print "$VERSION\n"; exit 0; }
+    };
+    &Getopt::Long::GetOptions($o, '--from=s', '--to=s', '--daily',
+                              '--debug',
 			      '--help', '--config=s', '--verbose',
 			      '--version');
-    if ($o->{'help'}) {
-	&Usage();
-    }
-    if ($o->{'version'}) {
-	print "$VERSION\n";
-	exit 0;
-    }
-    if ($o->{'debug'}) {
-	$debugging = 1;
-	$verbose = 1;
-    }
-    if ($o->{'verbose'}) {
-	$verbose = 1;
-    }
-    if ($o->{'config'}) {
-	$configFile = $o->{'config'};
-    }
+    ++$verbose if $debugging and !$verbose;
 
     my $from;
     if ($o->{'from'}) {
@@ -298,9 +360,124 @@ Interfaceauslastung vom $from_d.$from_m.$from_y - $to_d.$to_m.$to_y:
 	$to = Time::Local::timelocal(0, 0, 0, 1, $mon, $year);
     }
 
-    Report($configFile, $from, $to);
+    Report($o, $from, $to);
 }
 
+
+__END__
+
+=pod
+
+=head1 NAME
+
+  snmpmonRep - Create SNMP-Monitor reports
+
+
+=head1 SYNOPSIS
+
+  snmpmonRep [--config <file>] [--daily] [--debug] [--from <fromtime>]
+	     [--help] ] [--scale <bytes>] [--to <totime>] [--verbose]
+             [--version]
+
+
+=head1 DESCRIPTION
+
+This is a small utility for extracting statistics from an SNMP-Monitor
+database. It is typically called every month for generating accounting
+data.
+
+The report generator reads a list of all hosts and interfaces from
+its config file, by default F<~etc_dir~/configuration>. For any
+interface and host it finds, the sums of inoctets, outoctets and
+the average uptime are computed. Defaults are sent via email to
+the recipients configured in the config file.
+
+Available options are:
+
+=over 8
+
+=item --config <file>
+
+This option forces reading the configuration from <file>. The default
+config file is F<~etc_dir~/configuration>.
+
+=item --daily
+
+By default only total sums are computed. This option will add daily
+sums to the generated report. Daily sums can slow down the report
+drastically, because they require grouping and sorting.
+
+=item --debug
+
+This option suppresses sending reports. Implies verbose mode.
+
+=item --from <yyyy-mm-dd>
+
+This option is used to set the reports start time. By default the
+previous month is reported, thus --from defaults to the first day of
+the previous month. Dates can be in the format yyyy-mm-dd or
+dd-mm-yyyy. See also the --to option.
+
+=item --help
+
+Print a usage message and exit with error status.
+
+=item --scale <bytes>
+
+If your counters exceed Perl's or MySQL's integer limits, you can reduce
+the reports granularity to avoid overflow of numbers. This is typically
+required, if the counters exceed 2 GB. Examples:
+
+  --scale=1000
+
+or
+
+  --scale=1024
+
+=item --to <yyyy-mm-dd>
+
+Similar to --from, setting the reports stop time. This option is used to
+set the reports start time. By default the previous month is reported,
+thus --to defaults to the first day of the current month. Dates can be
+in the format yyyy-mm-dd or dd-mm-yyyy. See also the --from option.
+
+=item --version
+
+Print version number and exit.
+
+=item --verbose
+
+Turn on verbose mode, usefull mainly for debugging.
+
+=back
+
+
+=head1 AUTHOR AND COPYRIGHT
+
+This program is Copyright (C) 1998-99 by
+
+    Jochen Wiedmann
+    Am Eisteich 9
+    72555 Metzingen
+    Germany
+
+    Phone: +49 7123 14887
+    Email: joe@ispsoft.de
+
+All rights reserved.
+
+You may distribute this program under the terms of either the GNU General
+Public License or the Artistic License, as specified in the Perl README file.
+
+
+=head1 FILES
+
+   ~etcdir~/configuration	Default config file
+
+
+=head1 SEE ALSO
+
+  L<snmpmon(1)>, L<SNMP::Monitor(3)>
 EOF
 
 require SNMP::Monitor;

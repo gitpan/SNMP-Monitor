@@ -1,3 +1,9 @@
+1999-04-26  Jochen Wiedmann  <joe@ispsoft.de> (0.1010)
+
+	* snmpmonRep.PL: Added options --daily and --scale. Added POD docs.
+	  My thanks to WWL Internet Stuttgart (formerly ISS Internet Service
+	  Stuttgart) for paying this.
+
 1999-02-09  Jochen Wiedmann  <joe@ispsoft.de> (0.1009)
 
 	* lib/SNMP/Monitor/EP.pm (_ep_snmpmon_ifgif): Added Scale == -1,
@@ -13,7 +19,8 @@
 	* snmpmon.PL: Fixed ->{delete} to ->{'delete'}.
 	* html_templates/graph.ep.PL: Fixed $to_x$ to $cgi->to_x$.
 	* Removed use of FROM_UNIXTIME().
-	* Added Combo interfaces.
+	* Added Combo interfaces. My thanks to ISS Internet Service
+	  Stuttgart for paying this.
 
 1998-07-24  Jochen Wiedmann  <joe@ispsoft.de> (0.1007)
 
@@ -58,6 +65,7 @@
 
 1998-06-13  Jochen Wiedmann  <joe@ispsoft.de>
 
-	* Original version
+	* Original version. My thanks to ZVW (Zeitungsverlag Waiblingen)
+	  for paying this.
 
 
