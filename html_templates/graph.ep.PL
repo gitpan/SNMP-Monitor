@@ -6,32 +6,33 @@ my $script = <<'EOF';
 <ep-perl package=temp>
     my $self = $_;
     my($ifc,$dif,@if_list,$if_id);
-    my $cgi = $self->{cgi};
-    $self->{snmpmon_if_displayed} = [];
+    my $cgi = $self->{'cgi'};
+    $self->{'snmpmon_if_displayed'} = [];
     foreach $ifc ($cgi->param()) {
  	if ($ifc =~ /^if_\d+$/) {
  	    $if_id = $cgi->param($ifc);
  	    if ($if_id) {
  		push(@if_list, $if_id);
- 		foreach $dif (@{$self->{snmpmon_interfaces}}) {
- 		    if ($dif->{host}->{name} . ":" . $dif->{interface}->{num}
+ 		foreach $dif (@{$self->{'snmpmon_interfaces'}}) {
+ 		    if ($dif->{'host'}->{'name'} . ":"
+			. $dif->{'interface'}->{'num'}
  			eq $if_id) {
- 			$dif->{selected} = "CHECKED";
-			push(@{$self->{snmpmon_if_displayed}}, $dif);
+ 			$dif->{'selected'} = "CHECKED";
+			push(@{$self->{'snmpmon_if_displayed'}}, $dif);
  			last;
  		    }
  		}
  	    }
  	}
     }
-    $self->{snmpmon_display} = @{$self->{snmpmon_if_displayed}};
+    $self->{'snmpmon_display'} = scalar(@{$self->{'snmpmon_if_displayed'}});
 
     my(undef, undef, undef, $date_d, $date_m, $date_y) = localtime(time());
     $self->{'date_d'} = $date_d;
     $self->{'date_m'} = $date_m+1;
     $self->{'date_y'} = $date_y+1900;
 
-    my $crit = $self->{crit} = [];
+    my $crit = $self->{'crit'} = [];
     my $crit_selected = $cgi->param('critical');
     push(@$crit, { 'value' => "", 'text' => "Off",
 		   'selected' => $crit_selected ? "" : " SELECTED" });
@@ -42,7 +43,7 @@ my $script = <<'EOF';
 			   ? " SELECTED" : "" });
     }
 
-    $self->{avg_checked} = $cgi->param('average') ? " CHECKED" : "";
+    $self->{'avg_checked'} = $cgi->param('average') ? " CHECKED" : "";
 
     '';
 </ep-perl>
@@ -76,22 +77,22 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
   <TABLE>
     <TR><TH>Show the last</TH>
         <TD><ep-select range="1..5" item=d name=days
-             epparse-selected="$cgi->days$"
+             selected="$cgi->days$"
             ><OPTION $selected$>$d$</ep-select></TD>
         <TH>days until</TH>
         <TD COLSPAN=3><ep-select range="1..31" item=d name=to_d
-             epparse-selected="$cgi->to_d$"
+             selected="$cgi->to_d$"
             ><OPTION $selected$>$d$</ep-select
             >.<ep-select range="1..12" item=m name=to_m
-               epparse-selected="$cgi->to_m$"
+               selected="$cgi->to_m$"
             ><OPTION $selected$>$m$</ep-select
-            >.<ep-select epperl-range="($_->{date_y}-4).'..'.$_->{date_y}"
-               item=y name=to_y epparse-selected="$cgi->to_y$"
+            >.<ep-select range="($_->{date_y}-4).'..'.$_->{date_y}"
+               item=y name=to_y selected="$cgi->to_y$"
             ><OPTION $selected$>$y$</ep-select></TD>
     </TR>
     <TR><TH>Scale:</TH>
         <TD><ep-select range="100,75,50,25,10,5,2,1,0.5"
-             name="scale" item=s epparse-selected="$cgi->scale$"
+             name="scale" item=s selected="$cgi->scale$"
             ><OPTION VALUE="$s$" $selected$>$s$ %</ep-select></TD>
         <TH>Critical Line:</TH>
 	<TD><SELECT NAME=critical>
@@ -105,7 +106,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
   <INPUT TYPE=SUBMIT VALUE="Show Me">
 </FORM>
 </CENTER>
-<ep-if epparse-eval="$snmpmon-display$">
+<ep-if eval="$snmpmon_display$">
 <H2>Display</H2>
 <ep-list items="snmpmon_if_displayed" item="if">
 <H3>$if->interface->short_message$</H3>

@@ -58,14 +58,14 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
                 ><OPTION>$d$</ep-select></TD>
             <TH>days until</TH>
             <TD><ep-select name=to_d range="1..31" item=d
-                 epparse-selected="$date_d$"
+                 selected="$date_d$"
                 ><OPTION $selected$>$d$</ep-select
                 >.<ep-select name=to_m range="1..12" item=m
-                 epparse-selected="$date_m$"
+                 selected="$date_m$"
                 ><OPTION $selected$>$m$</ep-select
                 >.<ep-select name=to_y item=y
-                 epperl-range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
-                 epparse-selected="$date_y$"
+                 range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
+                 selected="$date_y$"
                 ><OPTION $selected$>$y$</ep-select></TD>
           <TR>
             <TH>Scale:</TH>
@@ -90,29 +90,29 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
         <TABLE>
           <TR><TH>From:</TD>
               <TD><ep-select name=from_d range="1..31" item=d
-                   epparse-selected="$from_d$"
+                   selected="$from_d$"
                   ><OPTION $selected$>$d$</ep-select></TD>
               <TD>.</TD>
               <TD><ep-select name=from_m range="1..12" item=m
-                   epparse-selected="$from_m$"
+                   selected="$from_m$"
                   ><OPTION $selected$>$m$</ep-select></TD>
               <TD>.</TD>
               <TD><ep-select name=from_y item=y
-                   epperl-range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
-                   epparse-selected="$from_y$"
+                   range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
+                   selected="$from_y$"
                   ><OPTION $selected$>$y$</ep-select></TD>
           <TR><TH>To:</TD>
               <TD><ep-select name=to_d range="1..31" item=d
-                   epparse-selected="$to_d$"
+                   selected="$to_d$"
                   ><OPTION $selected$>$d$</ep-select></TD>
               <TD>.</TD>
               <TD><ep-select name=to_m range="1..12" item=m
-                   epparse-selected="$to_m$"
+                   selected="$to_m$"
                   ><OPTION $selected$>$m$</ep-select></TD>
               <TD>.</TD>
               <TD><ep-select name=to_y item=y
-                   epperl-range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
-                   epparse-selected="$to_y$"
+                   range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
+                   selected="$to_y$"
                   ><OPTION $selected$>$y$</ep-select></TD>
             </TABLE>
           <INPUT TYPE=SUBMIT VALUE="Show Me"></CENTER>

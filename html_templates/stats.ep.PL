@@ -5,7 +5,8 @@ my $script = <<'EOF';
 <ep-snmpmon-auth configuration="~etc_dir~/configuration" user="">
 <ep-perl package=temp>
     my $self = $_;
-    my(undef, undef, undef, $date_d, $date_m, $date_y) = localtime(time());
+    my(undef, undef, undef, $date_d, $date_m, $date_y)
+        = localtime($self->{'now'} = time());
     $self->{'date_d'} = $date_d;
     $self->{'date_m'} = $date_m+1;
     $self->{'date_y'} = $date_y+1900;
@@ -19,25 +20,24 @@ my $script = <<'EOF';
     $self->{'from_y'} = $cgi->param('from_y');
 
     my($ifc,$dif,@if_list,$if_id);
-    my $cgi = $self->{cgi};
-    $self->{snmpmon_if_displayed} = [];
+    $self->{'snmpmon_if_displayed'} = [];
     foreach $ifc ($cgi->param()) {
  	if ($ifc =~ /^if_\d+$/) {
  	    $if_id = $cgi->param($ifc);
  	    if ($if_id) {
  		push(@if_list, $if_id);
  		foreach $dif (@{$self->{snmpmon_interfaces}}) {
- 		    if ($dif->{host}->{name} . ":" . $dif->{interface}->{num}
- 			eq $if_id) {
- 			$dif->{selected} = "CHECKED";
-			push(@{$self->{snmpmon_if_displayed}}, $dif);
+ 		    if ($dif->{'host'}->{'name'} . ":"
+			. $dif->{'interface'}->{'num'}	eq  $if_id) {
+ 			$dif->{'selected'} = "CHECKED";
+			push(@{$self->{'snmpmon_if_displayed'}}, $dif);
  			last;
  		    }
  		}
  	    }
  	}
     }
-    $self->{snmpmon_display} = @{$self->{snmpmon_if_displayed}};
+    $self->{'snmpmon_display'} = @{$self->{'snmpmon_if_displayed'}};
 
     ''
 </ep-perl>
@@ -70,38 +70,38 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <TABLE>
   <TR><TH>From:</TD>
       <TD><ep-select name=from_d range="1..31" item=d
-           epparse-selected="$from_d$"
+           selected="$from_d$"
           ><OPTION $selected$>$d$</ep-select></TD>
       <TD>.</TD>
       <TD><ep-select name=from_m range="1..12" item=m
-           epparse-selected="$from_m$"
+           selected="$from_m$"
           ><OPTION $selected$>$m$</ep-select></TD>
       <TD>.</TD>
       <TD><ep-select name=from_y item=y
-           epperl-range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
-           epparse-selected="$from_y$"
+           range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
+           selected="$from_y$"
           ><OPTION $selected$>$y$</ep-select></TD>
   <TR><TH>To:</TD>
       <TD><ep-select name=to_d range="1..31" item=d
-           epparse-selected="$to_d$"
+           selected="$to_d$"
           ><OPTION $selected$>$d$</ep-select></TD>
       <TD>.</TD>
       <TD><ep-select name=to_m range="1..12" item=m
-           epparse-selected="$to_m$"
+           selected="$to_m$"
           ><OPTION $selected$>$m$</ep-select></TD>
       <TD>.</TD>
       <TD><ep-select name=to_y item=y
-           epperl-range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
-           epparse-selected="$to_y$"
+           range="($_->{'date_y'}-4).'..'.$_->{'date_y'}"
+           selected="$to_y$"
           ><OPTION $selected$>$y$</ep-select></TD>
 </TABLE>
 <INPUT TYPE=SUBMIT VALUE="Show Me">
 </FORM>
 </CENTER>
-<ep-if epparse-eval=$snmpmon_display$>
-<ep-database epparse-dsn="$snmpmon_config->dbi_dsn$"
-             epparse-user="$snmpmon_config->dbi_user$"
-             epparse-password="$snmpmon_config->dbi_pass$">
+<ep-if eval=$snmpmon_display$>
+<ep-database dsn="$snmpmon_config->dbi_dsn$"
+             user="$snmpmon_config->dbi_user$"
+             password="$snmpmon_config->dbi_pass$">
 <ep-perl package=temp>
     my $self = $_;
     my $dbh = $self->{'dbh'};
@@ -113,7 +113,8 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
     my $to = Time::Local::timelocal(0, 0, 0, $self->{'to_d'},
 	  	                    $self->{'to_m'}-1,
                                     $self->{'to_y'}-1900);
-    my $secs = $self->{'secs'} = ($to - $from) > 0 ? ($to - $from) : 0;
+    my $to_now = ($to < $self->{'now'}) ? $to : $self->{'now'};
+    my $secs = $self->{'secs'} = ($to_now - $from) > 0 ? ($to_now - $from) : 0;
     while ($self->{'secs'} =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
 
     my $query = "SELECT SUM(INOCTETS), SUM(OUTOCTETS), AVG(OPERSTATUS=1)"
@@ -122,7 +123,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
         . " AND HOST = %s";
 
     my $if;
-    foreach $if (@{$self->{snmpmon_if_displayed}}) {
+    foreach $if (@{$self->{'snmpmon_if_displayed'}}) {
        my $q = sprintf($query, $if->{'interface'}->{'num'},
                        $dbh->quote($if->{'host'}->{'name'}));
        $self->print("Executing query: $q\n");

@@ -1,3 +1,15 @@
+1998-07-24  Jochen Wiedmann  <joe@ispsoft.de> (0.1007)
+
+	* html_templates/*.ep.PL: Removed epparse- and epperl- (gone
+	  with HTML::EP, 0.1100)
+
+1998-07-21  Jochen Wiedmann  <joe@ispsoft.de> (0.1006)
+
+	* html_templates/(ifgif|state).ep.PL: Fixed average calculation
+	  to use time() as a maximum of $to.
+	* html_templates/ifgif.ep.PL: Inserted 'title' argument into
+	  plot command.
+
 1998-07-21  Jochen Wiedmann  <joe@ispsoft.de> (0.1005)
 
 	* html_templates/graph.ep.PL: Added average display.

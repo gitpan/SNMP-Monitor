@@ -3,18 +3,20 @@
 my $script = <<'EOF';
 <ep-package name="SNMP::Monitor::EP" require=1>
 <ep-snmpmon-auth configuration="~etc_dir~/configuration" user=""
-	epparse-interface="$cgi->if$">
-<ep-database epparse-dsn="$snmpmon_config->dbi_dsn$"
-             epparse-user="$snmpmon_config->dbi_user$"
-             epparse-password="$snmpmon_config->dbi_pass$">
+	interface="$cgi->if$">
+<ep-database dsn="$snmpmon_config->dbi_dsn$"
+             user="$snmpmon_config->dbi_user$"
+             password="$snmpmon_config->dbi_pass$">
 <ep-perl package=temp>
     my $self = $_;
-    my $cgi = $self->{cgi};
-    my $if = $self->{snmpmon_interfaces}->[0];
+    my $cgi = $self->{'cgi'};
+    my $if = $self->{'snmpmon_interfaces'}->[0];
+    my $debug = $self->{'debug'};
     my($to_y) = $cgi->param('to_y');
     my $to;
     my($sec,$min,$hour,$mday,$mon,$year);
     require Time::Local;
+    my $now = time();
     if ($to_y) {
 	my($to_m) = $cgi->param('to_m');
 	my($to_d) = $cgi->param('to_d');
@@ -26,7 +28,7 @@ my $script = <<'EOF';
         $to = Time::Local::timelocal(0, 0, 12, $to_d, $to_m-1,
                                        $to_y-1900);
     } else {
-        ($sec,$min,$hour,$mday,$mon,$year) = localtime(time);
+        ($sec,$min,$hour,$mday,$mon,$year) = localtime($now);
         $to = Time::Local::timelocal(0, 0, 12, $mday, $mon, $year); 
     }
     $to += 1 * 24 * 3600;
@@ -41,9 +43,10 @@ my $script = <<'EOF';
 			     $year+1900, $mon+1, $mday, 0, 0, 0);
     $from = Time::Local::timelocal(0, 0, 0, $mday, $mon, $year);
 
-    if ($cgi->param('average')  &&  $from < $to) {
+    my $to_now = ($to < $now) ? $to : $now;
+    if ($cgi->param('average')  &&  $from < $to_now) {
 	require SNMP::Monitor::Event::IfLoad;
-	my $type = $if->{interface}->{type};
+	my $type = $if->{'interface'}->{'type'};
 	my $full_duplex;
 	if ($type =~ /^(\d+)$/) {
 	    my $ref = $SNMP::Monitor::Event::IfLoad::ITYPES->[$type];
@@ -63,14 +66,15 @@ my $script = <<'EOF';
 	    my $query = "SELECT SUM(INOCTETS), SUM(OUTOCTETS)"
 		. " FROM SNMPMON_IFLOAD WHERE"
 		. " INTERVAL_END >= FROM_UNIXTIME($from) AND"
-		. " INTERVAL_END < FROM_UNIXTIME($to) AND INTERFACE = "
-		. $if->{interface}->{num}
-	        . " AND HOST = " . $self->{dbh}->quote($if->{host}->{name});
+		. " INTERVAL_END < FROM_UNIXTIME($to_now) AND INTERFACE = "
+		. $if->{'interface'}->{'num'}
+	        . " AND HOST = "
+		. $self->{'dbh'}->quote($if->{'host'}->{'name'});
 
-	    if ($self->{debug}) {
+	    if ($debug) {
 		$self->print("Avg query: $query\n");
 	    }
-	    my $sth = $self->{dbh}->prepare($query);
+	    my $sth = $self->{'dbh'}->prepare($query);
 	    $sth->execute();
 	    my($sumIn, $sumOut) = $sth->fetchrow_array();
 	    if ($sumIn) {
@@ -81,26 +85,23 @@ my $script = <<'EOF';
 		    $delta = $sumIn + $sumOut;
 		}
 		$self->{'average'} = ($delta * 8 * 100.0) /
-		    (($to - $from) * $if->{interface}->{speed});
+		    (($to_now - $from) * $if->{'interface'}->{'speed'});
 	    }
 	}
     }
 
     my $query = "SELECT UTILIZATION, INTERVAL_END FROM SNMPMON_IFLOAD"
         . " WHERE INTERVAL_END > FROM_UNIXTIME($from) AND"
-        . " INTERVAL_END < FROM_UNIXTIME($to) AND HOST = "
-        . $self->{dbh}->quote($if->{host}->{name})
-        . " AND INTERFACE = " . $if->{interface}->{num}
+        . " INTERVAL_END < FROM_UNIXTIME($to_now) AND HOST = "
+        . $self->{'dbh'}->quote($if->{'host'}->{'name'})
+        . " AND INTERFACE = " . $if->{'interface'}->{'num'}
         . " ORDER BY INTERVAL_END";
-    my $sth = $self->{dbh}->prepare($query);
+    my $sth = $self->{'dbh'}->prepare($query);
     $sth->execute();
-    if (!$sth->rows()) {
-        die "No rows";
-    }
-    my $command = $self->{snmpmon_config}->{path_gnuplot} . " | " .
-        $self->{snmpmon_config}->{path_ppmtogif} . " 2>/dev/null";
+    my $command = $self->{'snmpmon_config'}->{'path_gnuplot'} . " | " .
+        $self->{'snmpmon_config'}->{'path_ppmtogif'} . " 2>/dev/null";
     my $fh;
-    if ($self->{debug}) {
+    if ($debug) {
         $self->print("Creating pipe to the following command:\n$command\n");
     } else {
         $fh = Symbol::gensym();
@@ -110,14 +111,15 @@ my $script = <<'EOF';
 	$| = 1;
         $self->print("content-type: image/gif\n\n");
     }
-    my $critical = $self->{cgi}->param('critical') ?
-        (", crit(x) = " . $self->{cgi}->param('critical') . ", crit(x)") : '';
-    my $avg = $self->{average} ?
-        (", avg(x) = " . $self->{average} . ", avg(x)") : '';
-    my $scale = $self->{cgi}->param('scale') || 100;
-    my $title = $self->{cgi}->param('title')
-        || $if->{interface}->{short_message}
-        || $if->{interface}->{description};
+    my $critical = $cgi->param('critical') ?
+        (", crit(x) = " . $cgi->param('critical') 
+	 . ", crit(x)") : '';
+    my $avg = $self->{'average'} ?
+        (", avg(x) = " . $self->{'average'} . ", avg(x)") : '';
+    my $scale = $cgi->param('scale') || 100;
+    my $title = $cgi->param('title')
+        || $if->{'interface'}->{'short_message'}
+        || $if->{'interface'}->{'description'};
 
     my $output = <<"GNUPLOT";
 set size noratio 1.5,0.4
@@ -129,9 +131,9 @@ set xrange [ "$from_range" : "$to_range" ]
 set yrange [ 0 : $scale ]
 set ylabel 'Auslastung [%]
 set format x \"%H:%M\\n%d.%m\"
-plot '-' using 1:2 with lines $critical$avg
+plot '-' using 1:2 title '$title' with lines $critical$avg
 GNUPLOT
-    if ($self->{debug}) {
+    if ($debug) {
         $self->print($output);
     } else {
         print $fh $output;
@@ -141,13 +143,13 @@ GNUPLOT
     while ($ref = $sth->fetchrow_arrayref) {
         ($utilization, $time) = @$ref;
         $time =~ s/ /,/;
-        if ($self->{debug}) {
+        if ($debug) {
             $self->print("$time $utilization\n");
         } else {
             print $fh "$time $utilization\n";
         }
     }
-    if (!$self->{debug}) {
+    if (!$debug) {
         close($fh);
     }
     $self->Stop();
