@@ -1,3 +1,8 @@
+1999-07-26  Jochen Wiedmann  <joe@ispsoft.de> (0.1012)
+
+	* lib/SNMP/Monitor/Event/IfLoad.pm: Added support for ifSpeed = 0,
+	  if the SNMP agent doesn't return proper speed values.
+
 1999-06-09  Jochen Wiedmann  <joe@ispsoft.de> (0.1010)
 
 	* lib/SNMP/Monitor/Event/IfLoad.pm (Query): Suppressed logging of negative

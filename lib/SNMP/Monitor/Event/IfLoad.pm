@@ -150,7 +150,8 @@ sub GetVars ($) {
     $v{'ifDescr'}       = $vr_session->[$vr_self->[$i++]]->[0]->[2];
     $v{'ifInOctets'}    = $vr_session->[$vr_self->[$i++]]->[0]->[2];
     $v{'ifOutOctets'}   = $vr_session->[$vr_self->[$i++]]->[0]->[2];
-    $v{'ifSpeed'}       = $vr_session->[$vr_self->[$i++]]->[0]->[2];
+    $v{'ifSpeed'}       = $vr_session->[$vr_self->[$i++]]->[0]->[2]
+	|| $self->{'speed'};
     $v{'ifType'}        = $vr_session->[$vr_self->[$i++]]->[0]->[2];
     $v{'ifAdminStatus'} = $vr_session->[$vr_self->[$i++]]->[0]->[2];
     $v{'ifOperStatus'}  = $vr_session->[$vr_self->[$i++]]->[0]->[2];
@@ -250,9 +251,19 @@ sub Calculate ($$) {
 	} else {
 	    $delta = $ifInOctets + $ifOutOctets;
 	}
-	$utilization = ($delta * 8 * 100.0) /
-	               (($time - $oldTime) * 
-			($v->{'ifUtilSpeed'} || $v->{'ifSpeed'}));
+	my $divisor = ($time - $oldTime) * 
+	    ($v->{'ifUtilSpeed'} || $v->{'ifSpeed'});
+	if ($divisor) {
+	    $utilization = ($delta * 8 * 100.0) / $divisor;
+	} else {
+	  Sys::Syslog::syslog('err',
+			      sprintf("IfLoad: Divisor is zero (utilspeed ="
+				      . " %s, speed = %s, time = %s, oldTime = %s\n",
+				      $v->{'ifUtilSpeed'},
+				      $v->{'ifSpeed'},
+				      $time,
+				      $oldTime));
+	}
     } else {
 	$utilization = 0.0;
     }
