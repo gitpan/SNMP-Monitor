@@ -103,17 +103,18 @@ if ( -f "configuration" ) {
 ExtUtils::MakeMaker::WriteMakefile(
     'NAME'	   => 'SNMP::Monitor',
     'VERSION_FROM' => 'lib/SNMP/Monitor.pm',
-    'EXE_FILES'    => [ 'snmpmon' ],
+    'EXE_FILES'    => [ 'snmpmon', 'snmpmonRep' ],
     'dist'         => { 'SUFFIX'       => ".gz",
 			'DIST_DEFAULT' => 'all tardist',
 			'COMPRESS'     => "gzip -9f" },
     'realclean'    => { 'FILES' => 'configuration html' },
-    'clean'        => { 'FILES' => 'snmpmon' },
+    'clean'        => { 'FILES' => 'snmpmon snmpmonRep' },
     'PL_FILES'     => { 'html_templates/index.ep.PL' => 'html/index.ep',
 			'html_templates/graph.ep.PL' => 'html/graph.ep',
 			'html_templates/ifgif.ep.PL' => 'html/ifgif.ep',
 			'html_templates/stats.ep.PL' => 'html/stats.ep',
-		        'snmpmon.PL' => 'snmpmon' }
+		        'snmpmon.PL' => 'snmpmon',
+		        'snmpmonRep.PL' => 'snmpmonRep' }
 );
 
 
@@ -128,14 +129,14 @@ sub postamble {
     <<"EOF";
 
 install ::
-	$perl -MFile::Path -e 'mkpath(["$etcdir"], 1, 0755)'
-	$perl -MFile::Copy -e 'if (-f "$etcdir/configuration") {  \\
-		print "Not overwriting existing configfile" .     \\
-			" $etcdir/configuration\\n";              \\
-	    } else {                                              \\
-		copy("configuration", "$etcdir/configuration");   \\
-                chmod 0600, "$etcdir/configuration";              \\
-	    }'
+\t$perl -MExtUtils::Command -e mkpath "$etcdir"
+\tif $perl -MExtUtils::Command -e test_f "$etcdir/configuration"; then      \\
+\t    echo "Not overwriting existing configfile $etcdir/configuration";     \\
+\telse                                                                      \\
+\t    $perl -MExtUtils::Command -e cp configuration "$etcdir/configuration";\\
+\t    $perl -MExtUtils::Command -e chmod 0600 "$etcdir/configuration";      \\
+\tfi
+
 EOF
 }
 

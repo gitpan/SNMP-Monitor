@@ -3,50 +3,7 @@
 my $script = <<'EOF';
 <ep-package name="SNMP::Monitor::EP" require=1>
 <ep-snmpmon-auth configuration="~etc_dir~/configuration" user="">
-<ep-perl package=temp>
-    my $self = $_;
-    my($ifc,$dif,@if_list,$if_id);
-    my $cgi = $self->{'cgi'};
-    $self->{'snmpmon_if_displayed'} = [];
-    foreach $ifc ($cgi->param()) {
- 	if ($ifc =~ /^if_\d+$/) {
- 	    $if_id = $cgi->param($ifc);
- 	    if ($if_id) {
- 		push(@if_list, $if_id);
- 		foreach $dif (@{$self->{'snmpmon_interfaces'}}) {
- 		    if ($dif->{'host'}->{'name'} . ":"
-			. $dif->{'interface'}->{'num'}
- 			eq $if_id) {
- 			$dif->{'selected'} = "CHECKED";
-			push(@{$self->{'snmpmon_if_displayed'}}, $dif);
- 			last;
- 		    }
- 		}
- 	    }
- 	}
-    }
-    $self->{'snmpmon_display'} = scalar(@{$self->{'snmpmon_if_displayed'}});
-
-    my(undef, undef, undef, $date_d, $date_m, $date_y) = localtime(time());
-    $self->{'date_d'} = $date_d;
-    $self->{'date_m'} = $date_m+1;
-    $self->{'date_y'} = $date_y+1900;
-
-    my $crit = $self->{'crit'} = [];
-    my $crit_selected = $cgi->param('critical');
-    push(@$crit, { 'value' => "", 'text' => "Off",
-		   'selected' => $crit_selected ? "" : " SELECTED" });
-    my $val;
-    foreach $val (100,75,50,25,10,5,2,1,0.5) {
-	push(@$crit, { 'value' => $val, 'text' => "$val %",
-		       'selected' => ($crit_selected == $val)
-			   ? " SELECTED" : "" });
-    }
-
-    $self->{'avg_checked'} = $cgi->param('average') ? " CHECKED" : "";
-
-    '';
-</ep-perl>
+<ep-snmpmon-graph>
 <HTML><HEAD>
 
 <STYLE TYPE="text/css">
@@ -110,7 +67,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <H2>Display</H2>
 <ep-list items="snmpmon_if_displayed" item="if">
 <H3>$if->interface->short_message$</H3>
-<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$to_y$&to_m=$to_m$&to_d=$to_d$&days=$cgi->days$&critical=$cgi->critical$&average=$cgi->average$">
+<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$to_ycgi->$&to_m=$cgi->to_m$&to_d=$cgi->to_d$&days=$cgi->days$&critical=$cgi->critical$&average=$cgi->average$">
 </CENTER>
 </ep-list>
 </ep-if>

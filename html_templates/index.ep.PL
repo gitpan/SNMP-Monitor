@@ -3,27 +3,7 @@
 my $script = <<'EOF';
 <ep-package name="SNMP::Monitor::EP" require=1>
 <ep-snmpmon-auth configuration="~etc_dir~/configuration" user="">
-<ep-perl package=temp>
-    my $self = $_;
-    my(undef, undef, undef, $date_d, $date_m, $date_y) = localtime(time());
-    $self->{'date_d'} = $date_d;
-    $self->{'date_m'} = $date_m+1;
-    $self->{'date_y'} = $date_y+1900;
-
-    $self->{'to_d'} = 1;
-    $self->{'to_m'} = $date_m+1;
-    $self->{'to_y'} = $date_y+1900;
-
-    $self->{'from_d'} = 1;
-    if ($date_m == 0) {
-	$self->{'from_m'} = 12;
-	$self->{'from_y'} = $date_y+1899;
-    } else {
-	$self->{'from_m'} = $date_m;
-	$self->{'from_y'} = $date_y+1900;
-    }
-    ''
-</ep-perl>
+<ep-snmpmon-index>
 <HTML><HEAD>
 <STYLE TYPE="text/css">
 td {font-size: 11px; font-family: Verdana;} 

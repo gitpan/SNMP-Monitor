@@ -381,8 +381,8 @@ eval {
 
     if (exists($o->{add})) {
 	Add($o->{add});
-    } elsif (exists($o->{delete})) {
-	Delete($o->{delete});
+    } elsif (exists($o->{'delete'})) {
+	Delete($o->{'delete'});
     } elsif (exists($o->{help})) {
 	Usage();
     } elsif (exists($o->{list})) {

@@ -1,3 +1,12 @@
+1998-11-03  Jochen Wiedmann  <joe@ispsoft.de> (0.1008)
+
+	* html_templates/*: Removed my(undef, ...) to support older
+	  Perl versions.
+	* snmpmon.PL: Fixed ->{delete} to ->{'delete'}.
+	* html_templates/graph.ep.PL: Fixed $to_x$ to $cgi->to_x$.
+	* Removed use of FROM_UNIXTIME().
+	* Added Combo interfaces.
+
 1998-07-24  Jochen Wiedmann  <joe@ispsoft.de> (0.1007)
 
 	* html_templates/*.ep.PL: Removed epparse- and epperl- (gone

@@ -3,44 +3,7 @@
 my $script = <<'EOF';
 <ep-package name="SNMP::Monitor::EP" require=1>
 <ep-snmpmon-auth configuration="~etc_dir~/configuration" user="">
-<ep-perl package=temp>
-    my $self = $_;
-    my(undef, undef, undef, $date_d, $date_m, $date_y)
-        = localtime($self->{'now'} = time());
-    $self->{'date_d'} = $date_d;
-    $self->{'date_m'} = $date_m+1;
-    $self->{'date_y'} = $date_y+1900;
-
-    my $cgi = $self->{'cgi'};
-    $self->{'to_d'} = $cgi->param('to_d');
-    $self->{'to_m'} = $cgi->param('to_m');
-    $self->{'to_y'} = $cgi->param('to_y');
-    $self->{'from_d'} = $cgi->param('from_d');
-    $self->{'from_m'} = $cgi->param('from_m');
-    $self->{'from_y'} = $cgi->param('from_y');
-
-    my($ifc,$dif,@if_list,$if_id);
-    $self->{'snmpmon_if_displayed'} = [];
-    foreach $ifc ($cgi->param()) {
- 	if ($ifc =~ /^if_\d+$/) {
- 	    $if_id = $cgi->param($ifc);
- 	    if ($if_id) {
- 		push(@if_list, $if_id);
- 		foreach $dif (@{$self->{snmpmon_interfaces}}) {
- 		    if ($dif->{'host'}->{'name'} . ":"
-			. $dif->{'interface'}->{'num'}	eq  $if_id) {
- 			$dif->{'selected'} = "CHECKED";
-			push(@{$self->{'snmpmon_if_displayed'}}, $dif);
- 			last;
- 		    }
- 		}
- 	    }
- 	}
-    }
-    $self->{'snmpmon_display'} = @{$self->{'snmpmon_if_displayed'}};
-
-    ''
-</ep-perl>
+<ep-snmpmon-stats>
 <HTML><HEAD>
 
 <STYLE TYPE="text/css">
@@ -102,57 +65,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <ep-database dsn="$snmpmon_config->dbi_dsn$"
              user="$snmpmon_config->dbi_user$"
              password="$snmpmon_config->dbi_pass$">
-<ep-perl package=temp>
-    my $self = $_;
-    my $dbh = $self->{'dbh'};
-    my $if;
-    require Time::Local;
-    my $from = Time::Local::timelocal(0, 0, 0, $self->{'from_d'},
-	                              $self->{'from_m'}-1,
-                                      $self->{'from_y'}-1900);
-    my $to = Time::Local::timelocal(0, 0, 0, $self->{'to_d'},
-	  	                    $self->{'to_m'}-1,
-                                    $self->{'to_y'}-1900);
-    my $to_now = ($to < $self->{'now'}) ? $to : $self->{'now'};
-    my $secs = $self->{'secs'} = ($to_now - $from) > 0 ? ($to_now - $from) : 0;
-    while ($self->{'secs'} =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
-
-    my $query = "SELECT SUM(INOCTETS), SUM(OUTOCTETS), AVG(OPERSTATUS=1)"
-        . " FROM SNMPMON_IFLOAD WHERE INTERVAL_END >= FROM_UNIXTIME($from) AND"
-        . " INTERVAL_END < FROM_UNIXTIME($to) AND INTERFACE = %s"
-        . " AND HOST = %s";
-
-    my $if;
-    foreach $if (@{$self->{'snmpmon_if_displayed'}}) {
-       my $q = sprintf($query, $if->{'interface'}->{'num'},
-                       $dbh->quote($if->{'host'}->{'name'}));
-       $self->print("Executing query: $q\n");
-       my $sth = $dbh->prepare($q);
-       $sth->execute();
-       my $ref = $sth->fetchrow_arrayref();
-
-       my $inOctets = $ref ? $ref->[0] : 0;
-       my $outOctets = $ref ? $ref->[1] : 0;
-       my $sumOctets = $inOctets + $outOctets;
-       my $avgOctets = $secs ?
-           sprintf("%.0f", ((8*($inOctets+$outOctets))/$secs)) : 0;
-
-       while ($inOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
-       $if->{'in_octets'} = $inOctets;
-
-       while ($outOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
-       $if->{'out_octets'} = $outOctets;
-
-       while ($sumOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
-       $if->{'sum_octets'} = $sumOctets;
-
-       while ($avgOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
-       $if->{'avg_octets'} = $avgOctets;
-
-       $if->{'up_percent'} = $ref ? sprintf("%.2f", ($ref->[2]*100)) : '';
-    }
-    ''
-</ep-perl>
+<ep-snmpmon-stats2>
 <H3>Interface stats</H3>
 <CENTER>
 <P>
