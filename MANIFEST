@@ -16,3 +16,4 @@ html_templates/graph.ep.PL
 html_templates/ifgif.ep.PL
 html_templates/stats.ep.PL
 t/base.t
+t/ep.t

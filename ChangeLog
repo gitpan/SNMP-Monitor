@@ -1,3 +1,11 @@
+1999-02-09  Jochen Wiedmann  <joe@ispsoft.de> (0.1009)
+
+	* lib/SNMP/Monitor/EP.pm (_ep_snmpmon_ifgif): Added Scale == -1,
+	  in which case an optimal scale is choosen by looking into the
+	  database. My thanks to Alexandre Baumeister <alex@finance-net.com>.
+	* Fixed a minor display bug in t/graph.ep (Alexandre Baumeister
+	  <alex@finance-net.com>).
+
 1998-11-03  Jochen Wiedmann  <joe@ispsoft.de> (0.1008)
 
 	* html_templates/*: Removed my(undef, ...) to support older

@@ -29,6 +29,8 @@ require SNMP::Monitor;
 package SNMP::Monitor::EP;
 
 @SNMP::Monitor::EP::ISA = qw(HTML::EP);
+$SNMP::Monitor::EP::VERSION = '0.02';
+
 
 sub init ($) {
     my($self) = @_;
@@ -292,6 +294,22 @@ sub _ep_snmpmon_ifgif {
 	}
     }
 
+    my $scale = $cgi->param('scale') || 100;
+    if($scale < 0) {
+	my $dbh = $self->{'dbh'};
+	my $query = sprintf('SELECT MAX(UTILIZATION) FROM SNMPMON_IFLOAD'
+			    . ' WHERE INTERVAL_END > %s  AND INTERVAL_END < %s'
+			    . ' AND HOST = %s AND INTERFACE = %s ORDER BY'
+			    . ' INTERVAL_END',
+			    $dbh->quote(_FromUnixTime($from)),
+			    $dbh->quote(_FromUnixTime($to_now)),
+			    $dbh->quote($if->{'host'}->{'name'}),
+			    $if->{'interface'}->{'num'});
+	my $sth = $dbh->prepare($query);
+	$sth->execute();
+	$scale = $sth->fetchrow_array() || 100;
+    }
+
     my $dbh = $self->{'dbh'};
     my $query = sprintf('SELECT UTILIZATION, INTERVAL_END FROM SNMPMON_IFLOAD'
 			. ' WHERE INTERVAL_END > %s  AND INTERVAL_END < %s'
@@ -321,7 +339,6 @@ sub _ep_snmpmon_ifgif {
 	 . ", crit(x)") : '';
     my $avg = $self->{'average'} ?
         (", avg(x) = " . $self->{'average'} . ", avg(x)") : '';
-    my $scale = $cgi->param('scale') || 100;
     my $title = $cgi->param('title')
         || $if->{'interface'}->{'short_message'}
         || $if->{'interface'}->{'description'};

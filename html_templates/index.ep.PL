@@ -49,9 +49,12 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
                 ><OPTION $selected$>$y$</ep-select></TD>
           <TR>
             <TH>Scale:</TH>
-            <TD><ep-select name=scale
-                 range="100,90,80,70,60,50,40,30,20,10,5" item=s
-                ><OPTION>$s$</ep-select></TD>
+            <TD><select name=scale>
+		  <ep-list range="100,75,50,25,10,5,2,1,0.5" item=s>
+		    <option value=$s$>$s$ %
+		  </ep-list>
+		    <option value=-1>Optimal
+                </select></TD>
           </TABLE>
           <INPUT TYPE=SUBMIT VALUE="Show Me"></CENTER>
         </FORM>

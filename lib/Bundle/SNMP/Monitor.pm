@@ -26,9 +26,11 @@ Mail::Internet 1.32
 
 DBI
 
+DBD::mysql
+
 IO::AtomicFile
 
-Bundle::HTML::EP
+Bundle::HTML::EP 0.1125
 
 SNMP::Monitor
 

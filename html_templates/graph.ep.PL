@@ -48,9 +48,17 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
             ><OPTION $selected$>$y$</ep-select></TD>
     </TR>
     <TR><TH>Scale:</TH>
-        <TD><ep-select range="100,75,50,25,10,5,2,1,0.5"
-             name="scale" item=s selected="$cgi->scale$"
-            ><OPTION VALUE="$s$" $selected$>$s$ %</ep-select></TD>
+        <TD><select name="scale">
+              <ep-list range="100,75,50,25,10,5,2,1,0.5" item=s
+                selected="$cgi->scale$">
+	        <OPTION VALUE="$s$" $selected$>$s$ %
+              </ep-list>
+              <ep-if cnd="$cgi->scale$<0">
+	        <OPTION VALUE="-1" selected>Optimal
+              <ep-else>
+	        <OPTION VALUE="-1">Optimal
+              </ep-if>
+            </select></TD>
         <TH>Critical Line:</TH>
 	<TD><SELECT NAME=critical>
 	      <ep-list items=crit item=c>
@@ -59,7 +67,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
         <TH>Show Average:</TH>
         <TD><INPUT TYPE=checkbox NAME=average $avg_checked$></TD>
     </TR>
-  </TABLE>         
+  </TABLE>
   <INPUT TYPE=SUBMIT VALUE="Show Me">
 </FORM>
 </CENTER>
@@ -67,7 +75,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <H2>Display</H2>
 <ep-list items="snmpmon_if_displayed" item="if">
 <H3>$if->interface->short_message$</H3>
-<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$to_ycgi->$&to_m=$cgi->to_m$&to_d=$cgi->to_d$&days=$cgi->days$&critical=$cgi->critical$&average=$cgi->average$">
+<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$cgi->to_y$&to_m=$cgi->to_m$&to_d=$cgi->to_d$&days=$cgi->days$&critical=$cgi->critical$&average=$cgi->average$">
 </CENTER>
 </ep-list>
 </ep-if>

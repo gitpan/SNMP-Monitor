@@ -1,3 +1,4 @@
+
 # -*- perl -*-
 #
 #
@@ -30,7 +31,7 @@ require Sys::Syslog;
 package SNMP::Monitor;
 
 
-$SNMP::Monitor::VERSION = '0.1008';
+$SNMP::Monitor::VERSION = '0.1009';
 
 
 sub new ($$) {
