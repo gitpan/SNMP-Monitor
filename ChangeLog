@@ -1,0 +1,19 @@
+1998-07-13  Jochen Wiedmann  <joe@ispsoft.de>
+
+	* lib/SNMP/Monitor/Install.pm (Install): Installation default
+	  is now /etc/snmpmon.
+
+1998-07-13  Jochen Wiedmann  <joe@ispsoft.de> (0.1001)
+
+	* Added support for Solaris.
+
+	* lib/SNMP/Monitor/Install.pm: The AddRouter() method is now
+	  sending separate requests for each interface it detects and
+	  not one reuqest for all interfaces. (It seems that some
+	  hubs can't work with fragmented packets.)
+
+1998-06-13  Jochen Wiedmann  <joe@ispsoft.de>
+
+	* Original version
+
+
