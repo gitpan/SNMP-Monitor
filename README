@@ -16,7 +16,7 @@ possibility of watching other SNMP variables.
 If HP OpenView or a similar program does this for you, stop reading
 here: You have something far better. If not, read on ...
 
-The SNMP::Monitor package and its frontend, the snmpmon utility allow you
+The SNMP::Monitor package and its frontend 'snmpmon' allow you
 to
 
     - add or delete routers from or to a set of managed routers
@@ -29,6 +29,16 @@ to
       information to given users based on interface and/or
       host
 
+The main differences between SNMP::Monitor and packages like MRTG are:
+
+    - SNMP::Monitor is a general purpose framework; you can easily
+      add arbitrary SNMP variables and related triggers
+    - A database engine is used for logging; thus SNMP::Monitor
+      can easily give any kind of accounting report that you like.
+
+If you'd like to see a running example, visit
+
+    http://www.zvw.de/snmpmon_public
 
 2.) Prerequisites
 
@@ -107,14 +117,14 @@ this should tell you how to configure your WWW server for feeding
 files with the extension .ep into the HTML::EP system. To verify
 the installation, create a file like
 
-    <html><head><title>HTML::EP test</title></head>
-    <body>
-    <ep-perl>"I'm ok!"</ep-perl>
-    </body>
+    <ep-perl>
+    print "content-type: text/plain\n\n";
+    print "It worked! Your EP system is up and running.\n";
+    </ep-perl>
 
 and point your browser to the appropriate location (note: Don't use
-a location like file://..., but http://...!). If you don't
-see the double quotes, the installation went fine.
+a location like file://..., but http://...!).  You should neither see the
+C<ep-perl> nor the C<print> instructions.
 
 After this is done, select a password protected directory and put
 the files from the "html" directory into it. That's all.

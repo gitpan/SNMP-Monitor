@@ -10,8 +10,6 @@ my $script = <<'EOF';
 <ep-perl package=temp>
     my $self = $_;
     my $cgi = $self->{cgi};
-    $self->snmpmon_auth({'configuration' => "/etc/snmpmon/configuration",
-			 'interface' => $cgi->param('if')});
     my $if = $self->{snmpmon_interfaces}->[0];
     my($to_y) = $cgi->param('to_y');
     my $to;
@@ -43,6 +41,51 @@ my $script = <<'EOF';
 			     $year+1900, $mon+1, $mday, 0, 0, 0);
     $from = Time::Local::timelocal(0, 0, 0, $mday, $mon, $year);
 
+    if ($cgi->param('average')  &&  $from < $to) {
+	require SNMP::Monitor::Event::IfLoad;
+	my $type = $if->{interface}->{type};
+	my $full_duplex;
+	if ($type =~ /^(\d+)$/) {
+	    my $ref = $SNMP::Monitor::Event::IfLoad::ITYPES->[$type];
+	    if (defined($ref)) {
+		$full_duplex = $ref->[1];
+	    }
+	} else {
+	    my $ref;
+	    foreach $ref (@$SNMP::Monitor::Event::IfLoad::ITYPES) {
+		if ($ref  &&  $ref->[0] eq $type) {
+		    $full_duplex = $ref->[1];
+		    last;
+		}
+	    }
+	}
+	if (defined($full_duplex)) {
+	    my $query = "SELECT SUM(INOCTETS), SUM(OUTOCTETS)"
+		. " FROM SNMPMON_IFLOAD WHERE"
+		. " INTERVAL_END >= FROM_UNIXTIME($from) AND"
+		. " INTERVAL_END < FROM_UNIXTIME($to) AND INTERFACE = "
+		. $if->{interface}->{num}
+	        . " AND HOST = " . $self->{dbh}->quote($if->{host}->{name});
+
+	    if ($self->{debug}) {
+		$self->print("Avg query: $query\n");
+	    }
+	    my $sth = $self->{dbh}->prepare($query);
+	    $sth->execute();
+	    my($sumIn, $sumOut) = $sth->fetchrow_array();
+	    if ($sumIn) {
+		my $delta;
+		if ($full_duplex) {
+		    $delta = ($sumIn > $sumOut) ? $sumIn : $sumOut;
+		} else {
+		    $delta = $sumIn + $sumOut;
+		}
+		$self->{'average'} = ($delta * 8 * 100.0) /
+		    (($to - $from) * $if->{interface}->{speed});
+	    }
+	}
+    }
+
     my $query = "SELECT UTILIZATION, INTERVAL_END FROM SNMPMON_IFLOAD"
         . " WHERE INTERVAL_END > FROM_UNIXTIME($from) AND"
         . " INTERVAL_END < FROM_UNIXTIME($to) AND HOST = "
@@ -68,7 +111,9 @@ my $script = <<'EOF';
         $self->print("content-type: image/gif\n\n");
     }
     my $critical = $self->{cgi}->param('critical') ?
-        (", f(x) = " . $self->{cgi}->param('critical') . ", f(x)") : '';
+        (", crit(x) = " . $self->{cgi}->param('critical') . ", crit(x)") : '';
+    my $avg = $self->{average} ?
+        (", avg(x) = " . $self->{average} . ", avg(x)") : '';
     my $scale = $self->{cgi}->param('scale') || 100;
     my $title = $self->{cgi}->param('title')
         || $if->{interface}->{short_message}
@@ -84,7 +129,7 @@ set xrange [ "$from_range" : "$to_range" ]
 set yrange [ 0 : $scale ]
 set ylabel 'Auslastung [%]
 set format x \"%H:%M\\n%d.%m\"
-plot '-' using 1:2 with lines $critical
+plot '-' using 1:2 with lines $critical$avg
 GNUPLOT
     if ($self->{debug}) {
         $self->print($output);

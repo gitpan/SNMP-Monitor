@@ -57,7 +57,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <H1><STRONG>SNMP-Monitor - Interface statistics</STRONG></H1>
 <CENTER>
 <FORM ACTION=stats.ep METHOD=GET>
-<TABLE WIDTH=500>
+<TABLE WIDTH=600>
   <TR BGCOLOR="#CCCCCC"><TH>Interface</TH><TH>Yes/No</TH></TR>
  <ep-list items="snmpmon_interfaces" item="if">
   <TR><TD>$if->interface->short_message$</TD>
@@ -132,6 +132,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 
        my $inOctets = $ref ? $ref->[0] : 0;
        my $outOctets = $ref ? $ref->[1] : 0;
+       my $sumOctets = $inOctets + $outOctets;
        my $avgOctets = $secs ?
            sprintf("%.0f", ((8*($inOctets+$outOctets))/$secs)) : 0;
 
@@ -140,6 +141,9 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 
        while ($outOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
        $if->{'out_octets'} = $outOctets;
+
+       while ($sumOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
+       $if->{'sum_octets'} = $sumOctets;
 
        while ($avgOctets =~ s/(\d{1,3})(\d{3})(\s.*)?$/$1 $2$3/) { }
        $if->{'avg_octets'} = $avgOctets;
@@ -164,14 +168,15 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
   </TR>
 </TABLE>
 </P>
-<TABLE WIDTH=500>
+<TABLE WIDTH=600>
   <TR BGCOLOR="#CCCCCC">
     <TH>Interface</TH><TH>Incoming Octets</TH><TH>Outgoing Octets</TH>
-    <TH>Average (Bit/sec)</TH><TH>Uptime (Percent)</TH></TR>
+    <TH>Sum</TH><TH>Average (Bit/sec)</TH><TH>Uptime (Percent)</TH></TR>
  <ep-list items="snmpmon_if_displayed" item="if">
   <TR><TD>$if->interface->short_message$</TD>
       <TD ALIGN=RIGHT>$if->in_octets$</TD>
       <TD ALIGN=RIGHT>$if->out_octets$</TD>
+      <TD ALIGN=RIGHT>$if->sum_octets$</TD>
       <TD ALIGN=RIGHT>$if->avg_octets$</TD>
       <TD ALIGN=RIGHT>$if->up_percent$</TD></TR>
  </ep-list>

@@ -31,6 +31,19 @@ my $script = <<'EOF';
     $self->{'date_m'} = $date_m+1;
     $self->{'date_y'} = $date_y+1900;
 
+    my $crit = $self->{crit} = [];
+    my $crit_selected = $cgi->param('critical');
+    push(@$crit, { 'value' => "", 'text' => "Off",
+		   'selected' => $crit_selected ? "" : " SELECTED" });
+    my $val;
+    foreach $val (100,75,50,25,10,5,2,1,0.5) {
+	push(@$crit, { 'value' => $val, 'text' => "$val %",
+		       'selected' => ($crit_selected == $val)
+			   ? " SELECTED" : "" });
+    }
+
+    $self->{avg_checked} = $cgi->param('average') ? " CHECKED" : "";
+
     '';
 </ep-perl>
 <HTML><HEAD>
@@ -66,7 +79,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
              epparse-selected="$cgi->days$"
             ><OPTION $selected$>$d$</ep-select></TD>
         <TH>days until</TH>
-        <TD><ep-select range="1..31" item=d name=to_d
+        <TD COLSPAN=3><ep-select range="1..31" item=d name=to_d
              epparse-selected="$cgi->to_d$"
             ><OPTION $selected$>$d$</ep-select
             >.<ep-select range="1..12" item=m name=to_m
@@ -77,9 +90,16 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
             ><OPTION $selected$>$y$</ep-select></TD>
     </TR>
     <TR><TH>Scale:</TH>
-        <TD><ep-select range="100,90,80,70,60,50,40,30,20,10,5"
+        <TD><ep-select range="100,75,50,25,10,5,2,1,0.5"
              name="scale" item=s epparse-selected="$cgi->scale$"
             ><OPTION VALUE="$s$" $selected$>$s$ %</ep-select></TD>
+        <TH>Critical Line:</TH>
+	<TD><SELECT NAME=critical>
+	      <ep-list items=crit item=c>
+		<OPTION VALUE="$c->value$" $c->selected$>$c->text$</ep-list>
+            </SELECT></TD>
+        <TH>Show Average:</TH>
+        <TD><INPUT TYPE=checkbox NAME=average $avg_checked$></TD>
     </TR>
   </TABLE>         
   <INPUT TYPE=SUBMIT VALUE="Show Me">
@@ -89,7 +109,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <H2>Display</H2>
 <ep-list items="snmpmon_if_displayed" item="if">
 <H3>$if->interface->short_message$</H3>
-<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$to_y$&to_m=$to_m$&to_d=$to_d$&days=$cgi->days$">
+<CENTER><IMG SRC="ifgif.ep?if=$if->host->name$:$if->interface->num$&scale=$cgi->scale$&to_y=$to_y$&to_m=$to_m$&to_d=$to_d$&days=$cgi->days$&critical=$cgi->critical$&average=$cgi->average$">
 </CENTER>
 </ep-list>
 </ep-if>

@@ -39,7 +39,7 @@ if ($@) {
     print "ok\n";
 }
 
-print "Checking for Mailtools ... ";
+print "Checking for MailTools ... ";
 $@ = '';
 eval "use Mail::Internet ();";
 if ($@) {
