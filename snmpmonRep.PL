@@ -176,7 +176,7 @@ sub ReportInterface ($$$$$$) {
 	$query = sprintf("SELECT $inSum AS INSUM, $outSum AS OUTSUM,"
 			 . " $inSum+$outSum AS SUM,"
 			 . " AVG(OPERSTATUS=1)*100 AS AVGSUM,"
-                         . " YEAR(INTERVALEND) AS Y,"
+                         . " YEAR(INTERVAL_END) AS Y,"
 			 . " MONTH(INTERVAL_END) AS M,"
 			 . " DAYOFMONTH(INTERVAL_END) AS D FROM"
 			 . " SNMPMON_IFLOAD WHERE"

@@ -278,8 +278,10 @@ sub Query {
     my $name = $session->{'name'};
     my $num = $self->{'num'};
     my $ifInOctets = $v->{'ifInOctets'} || 0;
+    $ifInOctets = 0 if $ifInOctets < 0;
     my $oldIfInOctets = $v->{'oldIfInOctets'};
     my $ifOutOctets = $v->{'ifOutOctets'} || 0;
+    $ifOutOctets = 0 if $ifOutOctets < 0;
     my $oldIfOutOctets = $v->{'oldIfOutOctets'};
 
     if ($session->{'config'}->{'debug'}) {
