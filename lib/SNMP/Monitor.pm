@@ -30,7 +30,7 @@ require Sys::Syslog;
 package SNMP::Monitor;
 
 
-$SNMP::Monitor::VERSION = '0.1003';
+$SNMP::Monitor::VERSION = '0.1004';
 
 
 sub new ($$) {

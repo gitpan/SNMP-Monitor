@@ -38,9 +38,11 @@ Lots of. :-) First of all, some external binaries are required:
       if you don't have GNUplot, you can still use the SNMP
       monitor, but no graphical view is available. See
 
-          http://www.cs.dartmouth.edu/gnuplot_info.html
+	ftp://cmpc1.phys.soton.ac.uk/pub/
 
-      for more information on GNUplot.
+      or
+
+	http://science.nas.nasa.gov/~woo/gnuplot/beta
 
     - The ppmtogif program, available as part of the netpbm
       package or as part of the libgr distribution. Sorry,

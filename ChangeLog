@@ -1,3 +1,13 @@
+1998-07-19  Jochen Wiedmann  <joe@ispsoft.de> (0.1004)
+
+	* snmpmon.PL (Start): Fixed use of setlogsock for Solaris.
+	  (This is becoming a nightmare ...)
+	* README: Fixed references to gnuplot sources.
+	* lib/SNMP/Monitor/Event/IfLoad.pm (Process): Fixed INSERT statement,
+	  so that NULL values are never used.
+
+	My thanks to Lupe Christoph, <lupe@alanya.m.isar.de>
+
 1998-07-13  Jochen Wiedmann  <joe@ispsoft.de>
 
 	* lib/SNMP/Monitor/Install.pm (Install): Installation default

@@ -49,7 +49,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <H1><STRONG>SNMP-Monitor - Interface utilization</STRONG></H1>
 <H3>Select interfaces being displayed:</H3>
 <CENTER>
-<FORM ACTION=graph.ep METHOD=POST>
+<FORM ACTION=graph.ep METHOD=GET>
   <TABLE WIDTH=500>
     <TR BGCOLOR="#CCCCCC"><TH>Interface</TH><TH>Yes/No</TH></TR>
    <ep-list items="snmpmon_interfaces" item="if">

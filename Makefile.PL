@@ -18,6 +18,16 @@ if ($@) {
     print "ok\n";
 }
 
+print "Checking for DBI ... ";
+$@ = '';
+eval "use DBI ();";
+if ($@) {
+    $ok = 0;
+    print("\nYou don't have installed the DBI module.\n");
+} else {
+    print "ok\n";
+}
+
 print "Checking for SNMP, V1.7 or later ... ";
 $@ = '';
 eval "use SNMP 1.7 ();";

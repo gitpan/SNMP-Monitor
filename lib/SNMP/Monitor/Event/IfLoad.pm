@@ -227,9 +227,13 @@ MSG
 
     if (!$dbh->do("INSERT INTO SNMPMON_IFLOAD VALUES (?, ?, FROM_UNIXTIME(?),"
 		  . " ?, ?, ?, ?, ?)",
-		  undef, $session->{name}, $num, $session->{'time'},
-		  $ifInOctets, $ifOutOctets, $utilization, $ifAdminStatus,
-		  $ifOperStatus)) {
+		  undef, $session->{name}, $num,
+		  $session->{'time'},
+		  $ifInOctets || 0,
+		  $ifOutOctets || 0,
+		  $utilization || 0.0,
+		  ($ifAdminStatus || 0),
+		  ($ifOperStatus || 0))) {
 	my $errmsg = $dbh->errstr();
 	my $host = $session->{name};
 

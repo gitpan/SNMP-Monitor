@@ -394,8 +394,10 @@ eval {
 	$@ = '';
 	eval {
 	    require Sys::Syslog;
-	    eval { Sys::Syslog::setlogsock('unix'); };
-	    $@ = '';
+	    if (defined(&Sys::Syslog::setlogsock)  &&
+		defined(&Sys::Syslog::_PATH_LOG)) {
+		Sys::Syslog::setlogsock('unix');;
+	    }
 	    Sys::Syslog::openlog('snmpmon', '', $facility);
 
 	    Start($o->{detach});

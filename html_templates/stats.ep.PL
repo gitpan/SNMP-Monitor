@@ -56,7 +56,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
 <BODY BGCOLOR="#FFFFFF">
 <H1><STRONG>SNMP-Monitor - Interface statistics</STRONG></H1>
 <CENTER>
-<FORM ACTION=stats.ep METHOD=POST>
+<FORM ACTION=stats.ep METHOD=GET>
 <TABLE WIDTH=500>
   <TR BGCOLOR="#CCCCCC"><TH>Interface</TH><TH>Yes/No</TH></TR>
  <ep-list items="snmpmon_interfaces" item="if">

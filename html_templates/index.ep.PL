@@ -40,7 +40,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
   <UL>
     <LI><H3>Show a graphical representation of the interface
 	    utilization</H3>
-	<FORM ACTION=graph.ep METHOD=POST><CENTER>
+	<FORM ACTION=graph.ep METHOD=GET><CENTER>
 	<TABLE WIDTH=500>
 	  <TR BGCOLOR="#CCCCCC"><TH>Interface</TH><TH>Yes/No</TH></TR>
 	 <ep-list items="snmpmon_interfaces" item="if">
@@ -76,7 +76,7 @@ A:LINK { font-family: Verdana;  color: #0097BF; }
           <INPUT TYPE=SUBMIT VALUE="Show Me"></CENTER>
         </FORM>
     <LI><H3>Show interface statistics</H3>
-	<FORM ACTION=stats.ep METHOD=POST><CENTER>
+	<FORM ACTION=stats.ep METHOD=GET><CENTER>
         <TABLE WIDTH=500>
 	  <TR BGCOLOR="#CCCCCC"><TH>Interface</TH><TH>Yes/No</TH></TR>
 	 <ep-list items="snmpmon_interfaces" item="if">
